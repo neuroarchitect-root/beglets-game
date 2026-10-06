@@ -1,31 +1,75 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>БЕГЛЕЦ — Конвой</title>
-<style>html,body{margin:0;height:100%;background:#090b10;overflow:hidden;font-family:monospace}body{display:flex;align-items:center;justify-content:center}#w{position:relative;width:min(100vw,1280px);aspect-ratio:16/9;background:#000;box-shadow:0 0 40px #000}canvas{width:100%;height:100%;image-rendering:pixelated;background:#10141d}#crt{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.08),rgba(0,0,0,.08) 1px,transparent 1px,transparent 3px)}</style></head>
-<body><div id="w"><canvas id="g" width="320" height="180"></canvas><div id="crt"></div></div>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>БЕГЛЕЦ — Конвой</title>
+<style>
+html,body{margin:0;height:100%;background:#07090d;overflow:hidden;font-family:monospace}
+body{display:flex;align-items:center;justify-content:center}
+#frame{position:relative;width:min(100vw,1280px);aspect-ratio:16/9;background:#000;box-shadow:0 0 60px #000}
+canvas{width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;background:#0b0f18}
+#scan{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0,rgba(0,0,0,.10) 1px,transparent 1px,transparent 3px)}
+</style>
+</head>
+<body>
+<div id="frame"><canvas id="game" width="320" height="180"></canvas><div id="scan"></div></div>
 <script>
-const c=document.getElementById('g'),x=c.getContext('2d');x.imageSmoothingEnabled=false;
-const K={};addEventListener('keydown',e=>{K[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>K[e.code]=false);
-const C={sky:'#111826',road:'#2b2d35',steel:'#596171',light:'#bfc6d4',skin:'#d59b6e',kimble:'#526b88',guard:'#7a704d',red:'#b64046',yellow:'#d8a84c',green:'#4d8b63',black:'#090b10',white:'#e7e2d6',rain:'#6b7892'};
-let state='TITLE',t=0,phaseT=0,shake=0,msg='',qte=0,qteTarget=.25,guardSaved=false,alert=0,trainX=350,px=48;
-const rain=[];for(let i=0;i<120;i++)rain.push({x:Math.random()*320,y:Math.random()*180,s:1+Math.random()*2});
-function reset(s){state=s;phaseT=0;msg=''}
-function rect(a,b,w,h,col){x.fillStyle=col;x.fillRect(a|0,b|0,w|0,h|0)}
-function text(s,a,b,col=C.white,sz=8,align='left'){x.fillStyle=col;x.font=sz+'px monospace';x.textAlign=align;x.fillText(s,a,b)}
-function rainFx(){x.strokeStyle=C.rain;x.lineWidth=1;for(const r of rain){x.beginPath();x.moveTo(r.x,r.y);x.lineTo(r.x-2,r.y+5);x.stroke();r.y+=r.s*1.7;r.x-=.7;if(r.y>185){r.y=-5;r.x=Math.random()*330}}}
-function busBody(off=0){rect(35+off,58,250,74,'#303a48');rect(41+off,64,238,60,'#3c4655');for(let i=0;i<6;i++){rect(51+i*35+off,69,24,20,'#182233');rect(53+i*35+off,71,20,16,'#1d2d40')}rect(46+off,124,228,8,'#1d2229');for(let i=0;i<2;i++){x.fillStyle='#14171c';x.beginPath();x.arc(85+i*150+off,136,12,0,Math.PI*2);x.fill();x.fillStyle='#68717f';x.beginPath();x.arc(85+i*150+off,136,5,0,Math.PI*2);x.fill()}}
-function human(a,b,col=C.kimble,dir=1){rect(a-3,b-17,7,9,C.skin);rect(a-4,b-8,9,12,col);rect(a-3,b+4,3,7,'#202631');rect(a+2,b+4,3,7,'#202631');rect(a+(dir>0?4:-6),b-6,3,8,C.skin)}
-function hud(obj){rect(5,5,310,20,'#0a0d12');text('МИССИЯ 3 — КОНВОЙ',10,13,C.yellow,7);text(obj,10,22,C.white,7);if(alert>0){rect(248,10,60,4,'#251519');rect(248,10,60*Math.min(1,alert/100),4,C.red);text('ТРЕВОГА',248,22,C.red,6)}}
-function title(){rect(0,0,320,180,C.black);for(let i=0;i<180;i+=4)rect(0,i,320,1,'#0d1320');text('БЕГЛЕЦ',160,68,C.white,24,'center');text('МИССИЯ 3',160,90,C.yellow,9,'center');text('КОНВОЙ',160,105,C.white,14,'center');if((t/35|0)%2===0)text('НАЖМИ ENTER',160,145,C.light,8,'center');if(K.Enter){K.Enter=false;reset('BUS')}}
-function bus(){rect(0,0,320,180,C.sky);rect(0,145,320,35,C.road);for(let i=0;i<12;i++)rect(i*38-(phaseT*1.8)%38,154,20,2,'#737780');busBody();rainFx();human(105,112,C.kimble);human(145,112,'#654f46');human(185,112,'#4e5d47');human(248,112,C.guard,-1);hud('Осмотритесь. Конвой движется через ночной лес.');if(phaseT>120)text('Q — наблюдение',12,168,C.light,7);if(K.KeyQ){text('КЛЮЧИ',244,91,C.yellow,6);text('АПТЕЧКА',210,117,C.yellow,6);text('МОЛОТОК',65,91,C.yellow,6)}if(phaseT>360)reset('CRASH')}
-function crash(){rect(0,0,320,180,C.sky);rect(0,145,320,35,C.road);let o=Math.sin(phaseT*.35)*Math.min(18,phaseT*.09);x.save();x.rotate(Math.min(.55,phaseT*.004));busBody(o);x.restore();rainFx();for(let i=0;i<18;i++){let ex=160+Math.sin(i*7+phaseT*.2)*phaseT*.35,ey=95+Math.cos(i*4+phaseT*.16)*phaseT*.12;rect(ex,ey,2,2,i%2?C.yellow:C.white)}if(phaseT<35)text('ВОДИТЕЛЬ: ДЕРЖИТЕСЬ!',160,25,C.white,8,'center');if(phaseT>60)shake=8;if(phaseT>105)reset('QTE')}
-function qteScene(){rect(0,0,320,180,'#141923');busBody(-35);rainFx();human(143,137,C.kimble);hud('Освободитесь от наручников.');text('НАРУЧНИКИ',160,44,C.white,10,'center');rect(80,54,160,10,'#191c22');rect(82,56,156,6,'#343b47');let zoneX=92+qteTarget*120;rect(zoneX,55,24,8,C.green);let cursor=82+(Math.sin(phaseT*.12)+1)*78;rect(cursor,53,3,12,C.yellow);text('Нажимай E, когда метка внутри зелёной зоны',160,82,C.light,7,'center');text('УСПЕХ: '+qte+'/3',160,96,C.yellow,8,'center');if(K.KeyE){K.KeyE=false;if(cursor>=zoneX&&cursor<=zoneX+24){qte++;qteTarget=Math.random()}else{alert=Math.min(100,alert+12);msg='Слишком шумно!'}}if(msg)text(msg,160,112,C.red,7,'center');if(qte>=3&&phaseT>30)reset('GUARD')}
-function guardChoice(){rect(0,0,320,180,C.sky);rect(0,132,320,48,'#252a31');busBody(-110);rainFx();human(120,143,C.kimble);human(205,151,C.guard);hud('Раненый охранник зажат обломками.');text('ОХРАННИК: Помоги...',205,126,C.white,6,'center');rect(18,145,120,25,'#35475d');rect(182,145,120,25,'#181d25');text('E — СПАСТИ',78,160,C.white,8,'center');text('F — УЙТИ',242,160,C.white,8,'center');if(K.KeyE){K.KeyE=false;guardSaved=true;reset('STEALTH')}if(K.KeyF){K.KeyF=false;guardSaved=false;reset('STEALTH')}}
-function worldBase(){rect(0,0,320,180,C.sky);rect(0,136,320,44,'#252a31');for(let i=0;i<16;i++){let xx=i*28-(phaseT*.22)%28;rect(xx,130,3,16,'#4e5560');rect(xx-4,142,20,3,'#535863')}rect(0,128,320,3,'#6a6f77');rect(0,145,320,3,'#555b65');for(let i=0;i<8;i++){rect(i*45,102,28,28,'#202832');rect(i*45+3,106,22,8,'#293544')}rainFx()}
-function stealth(){worldBase();let speed=(K.ShiftLeft||K.ShiftRight)?1.35:.7;if(K.KeyD||K.ArrowRight)px+=speed;if(K.KeyA||K.ArrowLeft)px-=speed;px=Math.max(10,Math.min(310,px));human(px,139,C.kimble);let copX=235+Math.sin(phaseT*.025)*42;human(copX,139,'#263b59',-1);rect(copX-60,118,60,1,'#705f3f');let dist=Math.abs(px-copX);if(dist<65&&px<copX)alert=Math.min(100,alert+.45*((K.ShiftLeft||K.ShiftRight)?2:1));else alert=Math.max(0,alert-.3);hud('Доберитесь до грузового поезда. Не попадитесь полиции.');text('A/D — движение   SHIFT — бег',10,170,C.light,6);if(alert>=100){px=48;alert=25;msg='Вас заметили! Попробуйте снова.'}if(msg)text(msg,160,35,C.red,7,'center');if(px>298)reset('TRAIN')}
-function train(){rect(0,0,320,180,C.sky);rect(0,144,320,36,'#232831');rainFx();trainX-=1.2;if(trainX<-40)trainX=340;for(let i=0;i<5;i++){let xx=trainX+i*66;rect(xx,86,58,46,i%2?'#55523f':'#475264');rect(xx+4,91,50,28,'#2b333e');rect(xx+10,120,38,6,'#24282e')}human(px,142,C.kimble);if(K.KeyD||K.ArrowRight)px+=1;if(K.KeyA||K.ArrowLeft)px-=1;hud('Запрыгните на поезд.');text('SPACE — прыжок',12,170,C.light,7);if(K.Space&&Math.abs(px-(trainX+8))<28){K.Space=false;reset('ROOF');px=35}}
-function roof(){rect(0,0,320,180,C.sky);rainFx();for(let i=0;i<6;i++){let xx=i*64-(phaseT*1.4)%64;rect(xx,125,58,28,'#414a57');rect(xx+4,129,50,18,'#2b333e')}human(px,124,C.kimble);let sp=K.ShiftLeft?1.4:.9;if(K.KeyD)px+=sp;if(K.KeyA)px-=sp;hud('Бегите по составу. Перепрыгивайте разрывы.');text('D — вперёд   SHIFT — бег   SPACE — прыжок',12,170,C.light,6);if(px>280)reset('JUMP')}
-function jumpScene(){rect(0,0,320,180,C.sky);rect(0,145,320,35,'#27303a');rainFx();let p=Math.min(1,phaseT/100),xx=40+p*220,yy=118-Math.sin(p*Math.PI)*48;human(xx,yy,C.kimble);text('ПРЫЖОК',160,45,C.white,14,'center');if(phaseT>110)reset('RADIO')}
-function radio(){rect(0,0,320,180,'#10151c');rect(28,42,264,108,'#242b34');rect(42,54,95,80,'#303945');rect(175,74,70,45,'#191e25');rect(184,82,52,28,'#313843');for(let i=0;i<5;i++)rect(189+i*10,88,5,12,'#11151a');human(108,137,C.kimble,-1);if(phaseT<130){text('РАДИО:',160,28,C.yellow,8,'center');text('Разыскивается сбежавший заключённый',160,40,C.white,7,'center');text('Ричард Кимбл.',160,51,C.white,7,'center')}else if(phaseT<290){text('РАДИО:',160,28,C.red,8,'center');text('Предположительно вооружён и опасен.',160,45,C.white,8,'center')}else{text('СТАТУС: БЕГЛЕЦ',160,40,C.red,12,'center');text(guardSaved?'Охранник спасён.':'Охранник оставлен.',160,58,C.light,7,'center');text('ENTER — завершить миссию',160,162,C.white,7,'center');if(K.Enter){K.Enter=false;reset('END')}}}
-function end(){rect(0,0,320,180,C.black);text('МИССИЯ ЗАВЕРШЕНА',160,65,C.white,14,'center');text('РИЧАРД КИМБЛ',160,90,C.yellow,10,'center');text('СТАТУС: БЕГЛЕЦ',160,108,C.red,9,'center');text('Следующая миссия: БОЛЬНИЦА КАУНТИ',160,140,C.light,7,'center')}
-function loop(){t++;phaseT++;x.save();if(shake>0){x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.92}({TITLE:title,BUS:bus,CRASH:crash,QTE:qteScene,GUARD:guardChoice,STEALTH:stealth,TRAIN:train,ROOF:roof,JUMP:jumpScene,RADIO:radio,END:end}[state]||title)();x.restore();requestAnimationFrame(loop)}loop();
-</script></body></html>
+const cv=document.getElementById('game'),g=cv.getContext('2d');g.imageSmoothingEnabled=false;
+const key={};addEventListener('keydown',e=>{key[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>key[e.code]=false);
+
+const P={
+ ink:'#080a0f', sky0:'#0b1020', sky1:'#111b30', sky2:'#182743',
+ cloud:'#24324a', rain:'#6f83a0',
+ snow:'#d9e1e9', skin0:'#6d432f',skin1:'#b86d45',skin2:'#e7a36c',
+ hair:'#261b19', coat0:'#1b2b3f',coat1:'#294564',coat2:'#42698b',
+ police0:'#172538',police1:'#243e5b',police2:'#39668d',
+ guard0:'#3a382d',guard1:'#5c5943',guard2:'#898061',
+ metal0:'#171c24',metal1:'#2a323d',metal2:'#44505e',metal3:'#6a7787',
+ road0:'#15181e',road1:'#252a31',road2:'#3b424b',
+ yellow0:'#5a4419',yellow1:'#a87824',yellow2:'#e4b84f',
+ red0:'#551c24',red1:'#a2343f',red2:'#e5575d',
+ green0:'#173d2b',green1:'#2f6b48',green2:'#5ba56f',
+ white:'#efe8d8', ui:'#0b0d12'
+};
+let state='TITLE',tick=0,pt=0,shake=0,qte=0,target=.25,guardSaved=false,alert=0,px=42,trainX=350,runFrame=0;
+const rain=[];for(let i=0;i<100;i++)rain.push({x:Math.random()*320,y:Math.random()*180,s:1+Math.random()*1.8});
+function R(x,y,w,h,c){g.fillStyle=c;g.fillRect(x|0,y|0,w|0,h|0)}
+function T(s,x,y,c=P.white,sz=7,a='left'){g.fillStyle=c;g.font=sz+'px monospace';g.textAlign=a;g.fillText(s,x,y)}
+function reset(s){state=s;pt=0}
+function rainfx(){g.strokeStyle=P.rain;for(const r of rain){g.beginPath();g.moveTo(r.x,r.y);g.lineTo(r.x-2,r.y+5);g.stroke();r.x-=.55;r.y+=r.s*1.7;if(r.y>185){r.y=-5;r.x=Math.random()*325}}}
+function moon(){R(258,18,18,18,'#c9ced5');R(264,18,18,18,P.sky0)}
+function trees(off=0,base=124){for(let i=-1;i<10;i++){let x=i*39-(off%39);let h=22+(i%3)*8;R(x+15,base-h+8,4,h-8,'#101820');g.fillStyle='#15202a';g.beginPath();g.moveTo(x,base-h+18);g.lineTo(x+17,base-h-6);g.lineTo(x+34,base-h+18);g.fill();g.beginPath();g.moveTo(x+3,base-h+29);g.lineTo(x+17,base-h+4);g.lineTo(x+31,base-h+29);g.fill()}}
+function bg(off=0){let gr=g.createLinearGradient(0,0,0,150);gr.addColorStop(0,P.sky0);gr.addColorStop(1,P.sky2);g.fillStyle=gr;g.fillRect(0,0,320,180);moon();R(0,52,320,15,'rgba(35,49,69,.28)');trees(off*.18,128);trees(off*.38,138);rainfx()}
+function face(x,y,dir=1){R(x-3,y-13,7,7,P.skin1);R(x-2,y-13,5,2,P.skin2);R(x-4,y-14,7,2,P.hair);R(x+(dir>0?3:-4),y-10,1,1,P.ink)}
+function kimble(x,y,dir=1,run=false){face(x,y,dir);R(x-4,y-6,9,10,P.coat0);R(x-3,y-5,7,8,P.coat1);R(x-2,y-4,2,6,P.coat2);R(x+(dir>0?4:-6),y-5,3,7,P.skin1);let f=run?((tick>>3)&1):0;R(x-3-f,y+4,3,8,P.metal0);R(x+1+f,y+4,3,8,P.metal0);R(x-4-f,y+11,4,2,'#111419');R(x+1+f,y+11,4,2,'#111419')}
+function cop(x,y,dir=-1){face(x,y,dir);R(x-5,y-16,10,3,P.police0);R(x-4,y-7,10,11,P.police0);R(x-3,y-6,8,9,P.police1);R(x-1,y-5,2,4,P.police2);R(x+(dir>0?5:-7),y-4,3,7,P.skin1);R(x-3,y+4,3,8,P.metal0);R(x+2,y+4,3,8,P.metal0)}
+function guard(x,y){face(x,y,-1);R(x-4,y-7,9,11,P.guard0);R(x-3,y-6,7,8,P.guard1);R(x-1,y-4,2,5,P.guard2);R(x-3,y+4,3,8,P.metal0);R(x+2,y+4,3,8,P.metal0)}
+function bus(x,y,crashed=0){
+ g.save();g.translate(x,y);g.rotate(crashed);
+ R(0,0,238,66,P.metal0);R(4,4,230,56,'#303a46');R(8,8,222,46,'#3d4856');
+ R(8,10,28,23,'#111927');R(41,10,28,23,'#111927');R(74,10,28,23,'#111927');R(107,10,28,23,'#111927');R(140,10,28,23,'#111927');R(173,10,28,23,'#111927');
+ for(let i=0;i<6;i++){R(11+i*33,13,22,17,'#1b2c40');R(13+i*33,15,18,3,'#28435d')}
+ R(204,8,25,38,'#25303b');R(207,11,19,31,'#182230');R(0,48,238,9,'#252a31');R(12,55,210,4,'#14171b');
+ R(8,38,8,5,P.yellow2);R(226,38,8,5,P.red2);
+ for(const wx of [46,186]){g.fillStyle='#0a0d12';g.beginPath();g.arc(wx,62,12,0,Math.PI*2);g.fill();g.fillStyle=P.metal3;g.beginPath();g.arc(wx,62,6,0,Math.PI*2);g.fill();g.fillStyle=P.metal1;g.beginPath();g.arc(wx,62,3,0,Math.PI*2);g.fill()}
+ g.restore();
+}
+function railScene(){bg(pt*.8);R(0,136,320,44,P.road0);R(0,144,320,4,P.metal3);R(0,154,320,4,P.metal2);for(let i=0;i<22;i++){R(i*17-(pt%17),149,12,3,P.road2);R(i*17-(pt%17),159,12,3,P.road1)}}
+function train(x,y){for(let i=0;i<5;i++){let xx=x+i*64;R(xx,y,58,42,'#1a2028');R(xx+2,y+2,54,36,i%2? '#53513d':'#465461');R(xx+6,y+6,46,22,'#27313b');R(xx+8,y+8,42,4,'#344453');R(xx+5,y+38,48,4,'#15191f');for(const wx of [xx+12,xx+46]){g.fillStyle='#080a0d';g.beginPath();g.arc(wx,y+44,6,0,Math.PI*2);g.fill();g.fillStyle=P.metal2;g.beginPath();g.arc(wx,y+44,3,0,Math.PI*2);g.fill()}}}
+function hud(obj){R(5,5,310,23,P.ui);R(8,8,2,17,P.yellow1);T('МИССИЯ 3 — КОНВОЙ',14,14,P.yellow2,7);T(obj,14,24,P.white,6);if(alert>0){R(246,10,62,4,P.red0);R(246,10,62*Math.min(1,alert/100),4,P.red2);T('ТРЕВОГА',246,22,P.red2,5)}}
+function title(){bg(0);R(0,0,320,180,'rgba(0,0,0,.42)');T('БЕГЛЕЦ',160,70,P.white,24,'center');T('МИССИЯ 3',160,91,P.yellow2,8,'center');T('КОНВОЙ',160,108,P.white,15,'center');if((tick>>5)%2===0)T('ENTER — НАЧАТЬ',160,148,P.white,7,'center');if(key.Enter){key.Enter=false;reset('BUS')}}
+function busScene(){bg(pt*1.3);R(0,144,320,36,P.road0);for(let i=0;i<10;i++)R(i*42-(pt*2)%42,160,22,2,P.road2);bus(41,72,0);kimble(105,121);guard(244,121);hud('Осмотритесь. Конвой идёт через ночной лес.');if(pt>110)T('Q — наблюдение',12,171,P.white,6);if(key.KeyQ){T('КЛЮЧИ',239,96,P.yellow2,5);T('АПТЕЧКА',209,125,P.yellow2,5);T('МОЛОТОК',68,95,P.yellow2,5)}if(pt>330)reset('CRASH')}
+function crash(){bg(pt*1.8);R(0,144,320,36,P.road0);let ang=Math.min(.58,pt*.005),ox=Math.sin(pt*.34)*Math.min(15,pt*.1);bus(41+ox,70,ang);for(let i=0;i<22;i++){let ex=150+Math.sin(i*2.1+pt*.17)*pt*.4,ey=100+Math.cos(i*3.2+pt*.13)*pt*.18;R(ex,ey,2,2,i%3?P.yellow2:P.white)}if(pt<40)T('ВОДИТЕЛЬ: ДЕРЖИТЕСЬ!',160,36,P.white,8,'center');if(pt>55)shake=7;if(pt>115)reset('QTE')}
+function qteScene(){bg(0);R(0,137,320,43,P.road0);bus(-34,88,.34);kimble(154,139);hud('Освободитесь от наручников.');T('НАРУЧНИКИ',160,48,P.white,10,'center');R(78,57,164,12,P.metal0);R(81,60,158,6,P.metal2);let zx=90+target*125;R(zx,58,25,10,P.green2);let cur=81+(Math.sin(pt*.13)+1)*79;R(cur,55,3,16,P.yellow2);T('E — нажмите в зелёной зоне',160,88,P.white,7,'center');T('УСПЕХ '+qte+'/3',160,103,P.yellow2,8,'center');if(key.KeyE){key.KeyE=false;if(cur>=zx&&cur<=zx+25){qte++;target=Math.random()}else alert=Math.min(100,alert+12)}if(qte>=3&&pt>25)reset('GUARD')}
+function guardChoice(){bg(0);R(0,137,320,43,P.road0);bus(-116,84,.42);kimble(119,143);guard(208,151);hud('Охранник зажат обломками автобуса.');T('ПОМОГИ...',207,128,P.white,6,'center');R(16,146,128,26,'#273647');R(176,146,128,26,'#1b2028');T('E — СПАСТИ',80,162,P.white,8,'center');T('F — УЙТИ',240,162,P.white,8,'center');if(key.KeyE){key.KeyE=false;guardSaved=true;reset('STEALTH')}if(key.KeyF){key.KeyF=false;guardSaved=false;reset('STEALTH')}}
+function stealth(){railScene();let s=(key.ShiftLeft||key.ShiftRight)?1.3:.72;if(key.KeyD||key.ArrowRight)px+=s;if(key.KeyA||key.ArrowLeft)px-=s;px=Math.max(12,Math.min(310,px));kimble(px,139,1,s>1);let cx=232+Math.sin(pt*.026)*46;cop(cx,139,-1);let seen=Math.abs(px-cx)<67&&px<cx;if(seen)alert=Math.min(100,alert+.55*(s>1?2:1));else alert=Math.max(0,alert-.35);if(alert>25){R(cx-58,116,58,1,P.yellow1)}hud('Доберитесь до состава. Не попадитесь полиции.');T('A/D — движение   SHIFT — бег',10,172,P.white,6);if(alert>=100){px=38;alert=22}if(px>300){px=40;reset('TRAIN')}}
+function trainScene(){railScene();trainX-=1.25;if(trainX<-55)trainX=340;train(trainX,96);kimble(px,141,1,true);if(key.KeyD)px+=.9;if(key.KeyA)px-=.7;hud('Запрыгните на грузовой поезд.');T('SPACE — прыжок',12,172,P.white,6);if(key.Space&&Math.abs(px-(trainX+8))<30){key.Space=false;px=38;reset('ROOF')}}
+function roof(){bg(pt*2.1);train(-pt*1.3%64,120);kimble(px,119,1,true);if(key.KeyD)px+=key.ShiftLeft?1.45:.95;if(key.KeyA)px-=.6;hud('Бегите по вагонам. Перепрыгните разрыв.');T('D — вперёд   SHIFT — бег',12,172,P.white,6);if(px>282)reset('JUMP')}
+function jump(){bg(pt*1.6);R(0,146,320,34,P.road0);train(-60,114);let p=Math.min(1,pt/95),xx=42+p*218,yy=119-Math.sin(p*Math.PI)*52;kimble(xx,yy,1,true);T('ПРЫЖОК',160,47,P.white,14,'center');if(pt>105)reset('RADIO')}
+function radio(){R(0,0,320,180,'#0d121a');R(30,38,260,112,'#232a33');R(36,44,112,96,'#303a45');R(44,52,95,80,'#222a33');R(177,72,74,48,'#171c22');R(184,78,60,35,'#303842');for(let i=0;i<6;i++)R(190+i*9,84,4,17,'#11151a');R(197,105,36,3,P.red1);kimble(108,138,-1,false);if(pt<125){T('РАДИО',160,28,P.yellow2,8,'center');T('Разыскивается сбежавший заключённый',160,42,P.white,7,'center');T('Ричард Кимбл.',160,53,P.white,7,'center')}else if(pt<275){T('РАДИО',160,28,P.red2,8,'center');T('ПРЕДПОЛОЖИТЕЛЬНО ВООРУЖЁН И ОПАСЕН',160,46,P.white,7,'center')}else{T('РИЧАРД КИМБЛ',160,45,P.white,11,'center');T('СТАТУС: БЕГЛЕЦ',160,62,P.red2,10,'center');T(guardSaved?'ОХРАННИК СПАСЁН':'ОХРАННИК ОСТАВЛЕН',160,82,P.yellow2,6,'center');T('ENTER — ЗАВЕРШИТЬ',160,162,P.white,7,'center');if(key.Enter){key.Enter=false;reset('END')}}}
+function end(){R(0,0,320,180,P.ink);T('МИССИЯ ЗАВЕРШЕНА',160,62,P.white,14,'center');T('БЕГЛЕЦ',160,88,P.yellow2,17,'center');T('Следующая миссия:',160,120,P.white,6,'center');T('БОЛЬНИЦА КАУНТИ',160,136,P.white,8,'center')}
+const scenes={TITLE:title,BUS:busScene,CRASH:crash,QTE:qteScene,GUARD:guardChoice,STEALTH:stealth,TRAIN:trainScene,ROOF:roof,JUMP:jump,RADIO:radio,END:end};
+function loop(){tick++;pt++;g.save();if(shake>.2){g.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.9}(scenes[state]||title)();g.restore();requestAnimationFrame(loop)}loop();
+</script>
+</body></html>
